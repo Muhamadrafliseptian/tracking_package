@@ -52,6 +52,7 @@
                             </div>
                         </div>
                         <div class="card-body">
+                            <!-- menampilkan detail paket -->
                             <div class="table table-responsive">
                                 <table class="table">
                                     <thead>
@@ -106,16 +107,21 @@
                 </h3>
                 <div class="card shadow">
                     <div class="card-body">
+                        <!-- pengecekan latitude dan longitude -->
                         <template v-if="latitude !== null && longitude !== null">
+                            <!-- menampilkan map -->
                             <l-map style="height: 300px" :zoom="zoom" :center="[latitude, longitude]">
                                 <l-tile-layer :url="url" :attribution="attribution"></l-tile-layer>
+                                <!-- menampilkan lokasi keberadaan kita -->
                                 <l-marker :lat-lng="[latitude, longitude]">
                                     <l-popup :options="popupOptions">
-                                        {{ locationName ? locationName.display_name : 'Loading...' }}
+                                        {{ locationName ? locationName.display_name : '' }}
                                     </l-popup>
                                 </l-marker>
+                                <!-- membuat garis rute berdasarkan data yang ada -->
                                 <l-polyline v-if="routeCoordinates.length > 0" :lat-lngs="routeCoordinates"
                                     :color="'green'" />
+                                <!-- melakukan perulangan data untuk menghasilkan marker -->
                                 <template v-for="data in dataShip">
                                     <l-marker :lat-lng="[data.latitude, data.longitude]" :icon="getMarkerIcon(data.status)">
                                         <l-popup>
@@ -132,19 +138,26 @@
     </div>
 </template>
 <script>
+// import marker untuk icon di map
 import shipMarker from '../assets/images/shipMarker.png'
 import homeMarker from '../assets/images/home.png'
 import gudangMarker from '../assets/images/gudang.png'
+import LoadingComponent from '../components/loading/LoadingComponent.vue'
 import axios from 'axios'
+
+// atribut leaflet
 import "leaflet/dist/leaflet.css";
 import { LMap, LTileLayer, LMarker, LPopup, LPolyline } from "@vue-leaflet/vue-leaflet";
+
+// atribut validasi form
 import { Form, Field } from 'vee-validate'
-import LoadingComponent from '../components/loading/LoadingComponent.vue'
 import * as valid from 'yup'
 export default {
     data() {
         return {
+            // dummy data dari seeder untuk mencari paket
             kode: "TRX-2003077",
+            // atribut leaflet
             routeCoordinates: [],
             dataShip: [],
             user: {},
@@ -166,6 +179,7 @@ export default {
         }
     },
     computed: {
+        // untuk validasi form yang tidak boleh kosong.
         schema() {
             return valid.object({
                 kode: valid.string().required('resi number must be field')
@@ -187,6 +201,7 @@ export default {
         LPolyline
     },
     methods: {
+        // membuat kondisi perubahan icon menggunakan status
         getMarkerIcon(status) {
             if (status === 'ON DELIVERY') {
                 return this.shipIcon;
@@ -196,6 +211,7 @@ export default {
                 return this.homeIcon; 
             }
         },
+        // method untuk mengambil data paket dengan tipe post
         search() {
             this.isLoading = true;
             let type = 'postData';
@@ -205,11 +221,14 @@ export default {
                     this.dataShip = result.data
                     this.user = result.user
                     this.barang = result.barang
+                    // pemanggilan rute atau pembuatan rute
                     this.createRoute();
                 }).finally(() => {
+                    // kondisi loading akan false ketika data ditemukan.
                     this.isLoading = false;
                 });
         },
+        // method untuk mendapatkan lokasi keberadaan kita
         getCurrentLocation() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
@@ -226,10 +245,12 @@ export default {
                 console.error('Geolocation is not supported by this browser.');
             }
         },
+        // method untuk membuat rute tracking berdasarkan data dari api
         createRoute() {
             this.routeCoordinates = this.dataShip.map((data) => [data.latitude, data.longitude]);
             console.log(this.routeCoordinates);
         },
+        // mengambil nama lokasi
         fetchLocationDetails(latitude, longitude) {
             axios
                 .get('https://nominatim.openstreetmap.org/reverse', {
@@ -246,6 +267,7 @@ export default {
                     console.error('Error occurred while fetching location details:', error);
                 });
         },
+        // kustomisasi icon
         customIcon() {
             this.shipIcon = L.icon({
                 iconUrl: shipMarker,
